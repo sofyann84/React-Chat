@@ -1,34 +1,68 @@
 var express = require('express');
 var router = express.Router();
-const Chat = require('../models/Chat')
+const moment = require('moment');
+var Chat = require('../models/Chat')
+
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {
-  Chat.find().then((data) => {
-    res.json(data)
-  }).catch((err) => {
-    res.status(500).json(err)
-  })
+  Chat.find().sort({ createdAt: 1 })
+    .then(result => {
+      let data = result.map(item => {
+        return {
+          _id: item._id,
+          id: item.chatId,
+          name: item.name,
+          message: item.message,
+          date: moment(item.createdAt).format("YYYY-MM-DD"),
+          time: moment(item.createdAt).format("LT")
+        }
+      })
+      res.json({
+        error: false,
+        data: data
+      })
+    })
+    .catch(err => res.json(err))
 });
 
-/* Router Post Chat */
+
 router.post('/', function (req, res, next) {
-  const { id, name, message } = req.body;
-  Chat.create({ id, name, message }).then((data) => {
-    res.status(201).json(data)
-  }).catch((err) => {
-    res.status(500).json(err)
-  })
+  Chat.create({ chatId: req.body.id, name: req.body.name, message: req.body.message })
+    .then(result => {
+      res.json({
+        error: false,
+        chat: result
+      })
+    })
+    .catch(err => {
+      res.json({
+        error: true,
+        message: err
+      })
+    })
 });
 
-/* Router Delete Chat */
+
 router.delete('/:id', function (req, res, next) {
-  const { id } = req.params;
-  Chat.findOneAndRemove({id: Number(id)}).then((data) => {
-    res.status(201).json(data)
-  }).catch((err) => {
-    res.status(500).json(err)
-  })
+  const id = parseInt(req.params.id)
+  Chat.findOneAndRemove({ chatId: id })
+    .then(result => {
+      res.json({
+        error: false,
+        delete: result
+      })
+    })
+    .catch(err => {
+      res.json({
+        error: true,
+        message: err
+      })
+    })
 });
 
 module.exports = router;
+
+
+
+
